@@ -1,7 +1,7 @@
 class display{
     private:
         //---Config---
-        int printDelays = 200;          //How long each digit will be visible [us]
+        int printDelays = 200;  //How long each digit will be visible   [us]
         //------
 
         //---Signs map---
@@ -35,14 +35,14 @@ class display{
         uint8_t signsAmount = sizeof(signNames) / sizeof(signNames[0]);     //Map size
 
         //Turns one of 4 display cathodes (from 0 to 3) low
-        void switchDigit(uint8_t digit){
+        void switchPanel(uint8_t digit){
             DDRB &= 0b11110000;
             DDRB |= (1 << digit);
         }
 
         //Sets digit segments configuration.
         //Before setting segments configuration,
-        //proper cathode should be set (switchDigit)
+        //proper cathode should be set (switchPanel)
         void setSegments(char sign, bool setDot){
             byte segmentsConfig;
 
@@ -69,6 +69,8 @@ class display{
             DDRD = 0b00000000;
         }
 
+    public:
+        //Colon leds are not multiplexed and can be switched independently
         void colonOn(){
             DDRB &= 0b11101111;
         }
@@ -77,28 +79,12 @@ class display{
             DDRB |= 0b00010000;
         }
 
-    public:
-        void printTime(String hhmm){
-            colonOn();
-
-            for(uint8_t i = 0; i < 4; i++){
-                switchDigit(i);
-                setSegments(hhmm[i], false);
-
-                delayMicroseconds(printDelays);
-
-                clearSegments();
-            }
-
-            colonOff();
-        }
-
         // void printDate(String ddmmyyyy){
         //     unsigned long startTime = micros();
 
         //     while(micros() - startTime < yearPrintDelay * 1000000){
         //         for(uint8_t i = 0; i < 4; i++){
-        //             switchDigit(i);
+        //             switchPanel(i);
         //             setSegments(ddmmyyyy[i], i == 1);
                     
         //             delayMicroseconds(printDelays);
@@ -111,7 +97,7 @@ class display{
 
         //     while(micros() - startTime < yearPrintTime * 1000000){
         //         for(uint8_t i = 0; i < 4; i++){
-        //             switchDigit(i);
+        //             switchPanel(i);
         //             setSegments(ddmmyyyy[i + 4], false);
 
         //             delayMicroseconds(printDelays);
@@ -120,4 +106,46 @@ class display{
         //         }
         //     }
         // }
+
+        // void printTime(String hhmm){
+        //     double startTime = micros();
+        //     colonOn();
+
+        //     for(uint8_t i = 0; i < 4; i++){
+        //         switchPanel(i);
+        //         setSegments(hhmm[i], false);
+
+        //         delayMicroseconds(printDelays);
+
+        //         clearSegments();
+        //     }
+
+        //     colonOff();
+        // }
+
+        void print(String string){
+            uint8_t stringSize = string.length();
+            uint8_t activePanel = 0;
+            uint8_t index = 0;
+
+            while(index < stringSize && activePanel < 4){
+                if(string[index] != '.'){
+                    bool showDot = false;
+
+                    if(index + 1 < stringSize && string[index + 1] == '.'){
+                        showDot = true;
+                    }
+
+                    switchPanel(activePanel);
+                    setSegments(string[index], showDot);
+
+                    delayMicroseconds(printDelays);
+                    clearSegments();
+
+                    activePanel++;
+                }
+
+                index++;
+            }
+        }
 };

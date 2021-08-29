@@ -1,45 +1,58 @@
-#include "display.h"
-
 #include <Wire.h>
+#include "display.h"
 #include "Arduino-DS3231/DS3231.h"
 
-#define timePrintTime 60    //How long time will be visible, before showing date [s]
-#define yearPrintDelay 5    //Time after displayed dd.mm will be changed to yyyy [s]
-#define yearPrintTime 5     //How long yyyy will be displayed                    [s]
+#define timePrintTime 600000000     //How long time will be visible, before showing date [us]
+#define yearPrintDelay 5000000      //Time after displayed dd.mm will be changed to yyyy [us]
+#define yearPrintTime 5000000       //How long yyyy will be displayed                    [us]
 
 display mainDisplay;
-
 DS3231 RTC;
 RTCDateTime dateHolder;
 
-uint8_t mode = 0;
+bool interrupt(){
+    //TODO
+}
 
-uint8_t pressedKey(){
-    //Returning pressed key
+uint8_t checkMode(){
+    //TODO
+}
+
+void printDate(display& display, DS3231& RTC){
+    float startTime = micros();
+
+    while(micros() - startTime < yearPrintDelay){
+        display.print("2708");
+    }
+
+    startTime = micros();
+
+    while(micros() - startTime < yearPrintTime){
+        display.print("2021");
+    }
+}
+
+void printTime(display& display, DS3231& RTC){
+    display.colonOn();
+
+    float startTime = micros();
+
+    while(micros() - startTime < timePrintTime){
+        display.print("1257");
+    }
+    
+    display.colonOff();
+
+    printDate(display, RTC);
 }
 
 void setup(){
     Wire.begin();   //Initialize I2C comunication
 }
 
-void loop() {
-// mainDisplay.printDate("24082021");
-
+void loop(){
     //Default clock mode
-    if(mode == 0){
-        double startTime = micros();
-
-        while(micros() - startTime < timePrintTime){
-
-            if(pressedKey() == -1){
-                dateHolder = RTC.getDateTime();
-
-                mainDisplay.printTime(String(dateHolder.hour) + String(dateHolder.minute));
-            }
-            else{
-            }
-        }
-
-
+    if(checkMode() == 0){
+        printTime(mainDisplay, RTC);
     }
 }
