@@ -1,7 +1,7 @@
 class display{
     private:
         //---Config---
-        int printDelays = 200;  //How long each digit will be visible   [us]
+        int printDelays = 500;  //How long each digit will be visible   [us]
         //------
 
         //---Signs map---
@@ -72,11 +72,11 @@ class display{
     public:
         //Colon leds are not multiplexed and can be switched independently
         void colonOn(){
-            DDRB &= 0b11101111;
+            DDRB |= 0b00010000;
         }
 
         void colonOff(){
-            DDRB |= 0b00010000;
+            DDRB &= 0b11101111;
         }
 
         // void printDate(String ddmmyyyy){
