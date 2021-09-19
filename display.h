@@ -5,7 +5,7 @@ class display{
         //------
 
         //---Signs map---
-        char signNames[10] = {
+        char signNames[11] = {
             '0',
             '1',
             '2',
@@ -15,10 +15,11 @@ class display{
             '6',
             '7',
             '8',
-            '9'
+            '9',
+            ' '
         };
 
-        byte signCodes[10] = {
+        byte signCodes[11] = {
             0b00111111,   //0
             0b00000110,   //1
             0b01011011,   //2
@@ -28,7 +29,8 @@ class display{
             0b01111101,   //6
             0b00000111,   //7
             0b01111111,   //8
-            0b01101111    //9
+            0b01101111,   //9
+            0b00000000    //empty
         };
         //------
 
