@@ -5,7 +5,7 @@ class display{
         //------
 
         //---Signs map---
-        char signNames[10] = {
+        char signNames[13] = {
             '0',
             '1',
             '2',
@@ -15,20 +15,26 @@ class display{
             '6',
             '7',
             '8',
-            '9'
+            '9',
+            'f',
+            'n',
+            ' '
         };
 
-        byte signCodes[10] = {
-            0b00111111,   //0
-            0b00000110,   //1
-            0b01011011,   //2
-            0b01001111,   //3
-            0b01100110,   //4
-            0b01101101,   //5
-            0b01111101,   //6
-            0b00000111,   //7
-            0b01111111,   //8
-            0b01101111    //9
+        byte signCodes[13] = {
+            0b00111111,     //0
+            0b00000110,     //1
+            0b01011011,     //2
+            0b01001111,     //3
+            0b01100110,     //4
+            0b01101101,     //5
+            0b01111101,     //6
+            0b00000111,     //7
+            0b01111111,     //8
+            0b01101111,     //9
+            0b01110001,     //f
+            0b01010100,     //n
+            0b00000000      //empty
         };
         //------
 
@@ -79,51 +85,7 @@ class display{
             DDRB &= 0b11101111;
         }
 
-        // void printDate(String ddmmyyyy){
-        //     unsigned long startTime = micros();
-
-        //     while(micros() - startTime < yearPrintDelay * 1000000){
-        //         for(uint8_t i = 0; i < 4; i++){
-        //             switchPanel(i);
-        //             setSegments(ddmmyyyy[i], i == 1);
-                    
-        //             delayMicroseconds(printDelays);
-
-        //             clearSegments();
-        //         }
-        //     }
-
-        //     startTime = micros();
-
-        //     while(micros() - startTime < yearPrintTime * 1000000){
-        //         for(uint8_t i = 0; i < 4; i++){
-        //             switchPanel(i);
-        //             setSegments(ddmmyyyy[i + 4], false);
-
-        //             delayMicroseconds(printDelays);
-
-        //             clearSegments();
-        //         }
-        //     }
-        // }
-
-        // void printTime(String hhmm){
-        //     double startTime = micros();
-        //     colonOn();
-
-        //     for(uint8_t i = 0; i < 4; i++){
-        //         switchPanel(i);
-        //         setSegments(hhmm[i], false);
-
-        //         delayMicroseconds(printDelays);
-
-        //         clearSegments();
-        //     }
-
-        //     colonOff();
-        // }
-
-        void print(String string){
+        void print(String string, uint8_t activeHalf = 2){
             uint8_t stringSize = string.length();
             uint8_t activePanel = 0;
             uint8_t index = 0;
@@ -139,7 +101,13 @@ class display{
                     switchPanel(activePanel);
                     setSegments(string[index], showDot);
 
-                    delayMicroseconds(printDelays);
+                    if((activeHalf == 1 && index < 2) || (activeHalf == 0 && index >= 2)){
+                        delayMicroseconds(100);
+                    }
+                    else{
+                      delayMicroseconds(printDelays);
+                    }
+                    
                     clearSegments();
 
                     activePanel++;
