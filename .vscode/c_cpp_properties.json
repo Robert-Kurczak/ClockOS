@@ -12,7 +12,8 @@
                 "-ffunction-sections",
                 "-fdata-sections",
                 "-fno-threadsafe-statics",
-                "-Wno-error=narrowing"
+                "-Wno-error=narrowing",
+                "-mmcu=atmega328p"
             ],
             "intelliSenseMode": "gcc-x64",
             "includePath": [

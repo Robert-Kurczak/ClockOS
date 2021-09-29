@@ -5,7 +5,7 @@ class display{
         //------
 
         //---Signs map---
-        char signNames[13] = {
+        char signNames[16] = {
             '0',
             '1',
             '2',
@@ -16,12 +16,15 @@ class display{
             '7',
             '8',
             '9',
+            'C',
             'f',
             'n',
+            '-',
+            '*',
             ' '
         };
 
-        byte signCodes[13] = {
+        byte signCodes[16] = {
             0b00111111,     //0
             0b00000110,     //1
             0b01011011,     //2
@@ -32,8 +35,11 @@ class display{
             0b00000111,     //7
             0b01111111,     //8
             0b01101111,     //9
+            0b00111001,     //C
             0b01110001,     //f
             0b01010100,     //n
+            0b01000000,     //-
+            0b01100011,     //*
             0b00000000      //empty
         };
         //------
@@ -76,13 +82,18 @@ class display{
         }
 
     public:
+        bool activeColon = false;
         //Colon leds are not multiplexed and can be switched independently
         void colonOn(){
             DDRB |= 0b00010000;
+
+            activeColon = true;
         }
 
         void colonOff(){
             DDRB &= 0b11101111;
+
+            activeColon = false;
         }
 
         void print(String string, uint8_t activeHalf = 2){

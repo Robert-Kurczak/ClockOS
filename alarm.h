@@ -30,28 +30,6 @@ class alarm{
             noTone(buzzerPin);
         }
 
-        void alarmBuzz(){
-            while(!interrupt(true)){
-                g_alarm.beep();
-
-                float startTime = micros();
-                while(micros() - startTime < 40000){
-                    if(interrupt(true)){
-                        return;
-                    }
-                }
-
-                g_alarm.beep();
-
-                startTime = micros();
-                while(micros() - startTime < 160000){
-                    if(interrupt(true)){
-                        return;
-                    }
-                }
-            }
-        }
-
         void set(DateTime alarmDate){
             EEPROM.put(hourAddress, alarmDate.hour());
             EEPROM.put(minuteAddress, alarmDate.minute());

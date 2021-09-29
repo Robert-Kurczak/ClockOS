@@ -3,9 +3,11 @@
 #include "RTClib.h"
 #include "alarm.h"
 
-#define timePrintTime 600000000	//How long time will be visible, before showing date	[us]
-#define yearPrintDelay 5000000	//Time after displayed dd.mm will be changed to yyyy	[us]
-#define yearPrintTime 5000000 	//How long yyyy will be displayed                    	[us]
+#define timePrintTime 600000000			//How long time will be visible, before showing date	[us]
+#define yearPrintDelay 5000000			//Time after displayed dd.mm will be changed to yyyy	[us]
+#define yearPrintTime 5000000 			//How long yyyy will be displayed                    	[us]
+#define temperaturePrintTime 5000000	//How long temperature will be displayed               	[us]
+#define checkRTCdelays 100000			//Time between checks of actually time stored in RTC	[us]
 
 #define modeSelectPin A0
 #define button1Pin A3
@@ -97,14 +99,28 @@ void printDateNormal(){
 void printDateSet(DateTime date, float timeOnDisplay, bool printYear, uint8_t activeHalf){
 	float startTime = micros();
 
+	//Print ddmm
 	if(!printYear){
-		while(micros() - startTime < timeOnDisplay){
+		//Instead of printing for some period of time, print just once
+		if(timeOnDisplay == -1){
 			g_mainDisplay.print(formatNumber(date.day()) + "." + formatNumber(date.month()), activeHalf);
 		}
+		else{
+			while(micros() - startTime < timeOnDisplay){
+				g_mainDisplay.print(formatNumber(date.day()) + "." + formatNumber(date.month()), activeHalf);
+			}
+		}
 	}
+	//Print yyyy
 	else{
-		while(micros() - startTime < timeOnDisplay){
+		//Instead of printing for some period of time, print just once
+		if(timeOnDisplay == -1){
 			g_mainDisplay.print(String(date.year()));
+		}
+		else{
+			while(micros() - startTime < timeOnDisplay){
+				g_mainDisplay.print(String(date.year()));
+			}
 		}
 	}
 }
@@ -115,13 +131,21 @@ void printTimeNormal(){
 
 	float startTime = micros();
 
+	DateTime now = g_RTC.now();
+	float checkRTCtimer = micros();
+
 	while(micros() - startTime < timePrintTime){
-		if(interrupt()){
+		if(interrupt(true)){
 			g_mainDisplay.colonOff();
 			return;
 		}
 
-		DateTime now = g_RTC.now();
+		//Reading from RTC is time costly and it results in lower display brightness,
+		//therefore I check this in predefined time spans
+		if(micros() - checkRTCtimer >= checkRTCdelays){
+			now = g_RTC.now();
+		}
+		
 
 		g_mainDisplay.print(formatNumber(now.hour()) + formatNumber(now.minute()));
 	}
@@ -135,18 +159,90 @@ void printTimeNormal(){
 void printTimeSet(DateTime time, float timeOnDisplay, uint8_t activeHalf){
 	float startTime = micros();
 
-	while(micros() - startTime < timeOnDisplay){
+	//Instead of printing for some period of time, print just once
+	if(timeOnDisplay == -1){
 		g_mainDisplay.print(formatNumber(time.hour()) + formatNumber(time.minute()), activeHalf);
+	}
+	else{
+		while(micros() - startTime < timeOnDisplay){
+			g_mainDisplay.print(formatNumber(time.hour()) + formatNumber(time.minute()), activeHalf);
+		}
+	}
+}
+
+void printTemperature(){
+	bool wasColonOn = g_mainDisplay.activeColon;
+
+	if(wasColonOn){
+		g_mainDisplay.colonOff();
+	}
+
+	uint8_t temperature = g_RTC.getTemperature();
+	String result;
+	
+	if(temperature < 0 || temperature > 99){
+		result = "----";
+	}
+	else{
+		result = String(temperature) + "*C";
+	}
+
+	float startTime = micros();
+	while(micros() - startTime < temperaturePrintTime){
+		if(interrupt()) return;
+		g_mainDisplay.print(result);
+	}
+
+	if(wasColonOn){
+		g_mainDisplay.colonOn();
 	}
 }
 
 void printMessage(String msg, float timeOnDisplay){
-	// g_mainDisplay.colonOff();
+	bool wasColonOn = g_mainDisplay.activeColon;
+
+	if(wasColonOn){
+		g_mainDisplay.colonOff();
+	}
 
 	float startTime = micros();
 
 	while(micros() - startTime < timeOnDisplay){
 		g_mainDisplay.print(msg);
+	}
+
+	if(wasColonOn){
+		g_mainDisplay.colonOn();
+	}
+}
+
+void alarmPrint(uint64_t us){
+	g_mainDisplay.colonOn();
+
+	float startTime = micros();
+
+	while(micros() - startTime < us){
+		if(interrupt(true)){
+			return;
+		}
+
+		DateTime now = g_RTC.now();
+
+		g_mainDisplay.print(formatNumber(now.hour()) + formatNumber(now.minute()));
+	}
+
+	g_mainDisplay.colonOff();
+}
+
+void alarmBuzz(){
+	while(!interrupt(true)){
+		g_alarm.beep();
+
+		alarmPrint(40000);
+
+		g_alarm.beep();
+
+		alarmPrint(160000);
 	}
 }
 
@@ -166,7 +262,18 @@ void loop(){
 
 	//Default clock mode
 	if(currentMode == 0){
-		printTimeNormal();
+		switch(pressedButton()){
+			case 1:
+				printDateNormal();
+				break;
+			
+			case 2:
+				printTemperature();
+				break;
+
+			case -1:
+				printTimeNormal();
+		}
 	}
 	//Set alarm mode
 	else if(currentMode == 1){
@@ -176,10 +283,12 @@ void loop(){
 		TimeSpan offset = 3600;
 		uint8_t activeHalf = 0;
 
+		bool changes = false;
+
 		g_mainDisplay.colonOn();
 
 		while(checkMode() == 1){
-			printTimeSet(currentAlarm, 10000, activeHalf);
+			printTimeSet(currentAlarm, -1, activeHalf);
 
 			if(!digitalRead(button1Pin) && !digitalRead(button3Pin)){
 				if(!g_alarm.isActive()){
@@ -196,25 +305,29 @@ void loop(){
 			}
 			else{
 				switch(pressedButton()){
-					case 3:
-						offset.totalseconds() == 3600 ? offset = 60 : offset = 3600;
-						
-						activeHalf++;
-						activeHalf %= 2;
-	
-						printTimeSet(currentAlarm, 250000, activeHalf);
-	
-						break;
-	
 					case 1:
 						currentAlarm = currentAlarm + offset;
 	
 						printTimeSet(currentAlarm, 250000, activeHalf);
+						
+						if(!changes) changes = true;
 	
 						break;
 	
 					case 2:
 						currentAlarm = currentAlarm - offset;
+	
+						printTimeSet(currentAlarm, 250000, activeHalf);
+
+						if(!changes) changes = true;
+	
+						break;
+
+					case 3:
+						offset.totalseconds() == 3600 ? offset = 60 : offset = 3600;
+						
+						activeHalf++;
+						activeHalf %= 2;
 	
 						printTimeSet(currentAlarm, 250000, activeHalf);
 	
@@ -225,7 +338,15 @@ void loop(){
 
 		g_mainDisplay.colonOff();
 
-		g_alarm.set(currentAlarm);
+		if(changes){
+			g_alarm.set(currentAlarm);
+
+			//If alarm is in active mode and changes were made,
+			//RTC alarm have to be overwritten with new time.
+			if(g_alarm.isActive()){
+				g_alarm.activate();
+			}
+		}
 	}
 	//Set date mode
 	else if(currentMode == 2){
@@ -237,8 +358,10 @@ void loop(){
 		uint8_t month = date.month();
 		uint16_t year = date.year();
 
+		bool changes = false;
+
 		while(checkMode() == 2){
-			printDateSet(date, 10000, currentSetting == 2, currentSetting);
+			printDateSet(date, -1, currentSetting == 2, currentSetting);
 
 			switch(pressedButton()){
 				case 1:
@@ -267,6 +390,8 @@ void loop(){
 
 					date = DateTime(year, month, day);
 					printDateSet(date, 250000, currentSetting == 2, currentSetting);
+
+					if(!changes) changes = true;
 
 					break;
 
@@ -297,6 +422,8 @@ void loop(){
 					date = DateTime(year, month, day);
 					printDateSet(date, 250000, currentSetting == 2, currentSetting);
 
+					if(!changes) changes = true;
+
 					break;
 
 				case 3:
@@ -310,7 +437,10 @@ void loop(){
 		}
 
 		DateTime currentTime = g_RTC.now();
-		g_RTC.adjust(DateTime(year, month, day, currentTime.hour(), currentTime.minute(), currentTime.second()));
+
+		if(changes){
+			g_RTC.adjust(DateTime(year, month, day, currentTime.hour(), currentTime.minute(), currentTime.second()));
+		}
 	}
 	//Set time mode
 	else if(currentMode == 3){
@@ -326,7 +456,7 @@ void loop(){
 		g_mainDisplay.colonOn();
 
 		while(checkMode() == 3){
-			printTimeSet(time, 10000, activeHalf);
+			printTimeSet(time, -1, activeHalf);
 
 			switch(pressedButton()){
 				case 1:
@@ -362,7 +492,7 @@ void loop(){
 
 	//Handle alarm
 	if(g_alarm.fired()){
-		g_alarm.alarmBuzz();
+		alarmBuzz();
 
 		alarmInterruptFired = false;
 		g_alarm.clear();
