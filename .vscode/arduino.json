@@ -1,5 +1,5 @@
 {
     "board": "arduino:avr:uno",
     "sketch": "ClockOS.ino",
-    "programmer": "arduino:arduinoasispatmega32u4"
+    "intelliSenseGen": "disable"
 }

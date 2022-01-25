@@ -126,6 +126,7 @@ void printDateSet(DateTime date, float timeOnDisplay, bool printYear, uint8_t ac
 }
 
 //Function for printing time in normal mode
+//Problem with display freezing probably comes from here
 void printTimeNormal(){
 	g_mainDisplay.colonOn();
 
@@ -144,6 +145,8 @@ void printTimeNormal(){
 		//therefore I check this in predefined time spans
 		if(micros() - checkRTCtimer >= checkRTCdelays){
 			now = g_RTC.now();
+
+			checkRTCtimer = micros();
 		}
 		
 
@@ -269,6 +272,11 @@ void loop(){
 			
 			case 2:
 				printTemperature();
+				break;
+
+			case 3:
+				g_mainDisplay.currentDelayMode++;
+				g_mainDisplay.currentDelayMode %= 4;
 				break;
 
 			case -1:

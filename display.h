@@ -1,11 +1,11 @@
 class display{
     private:
         //---Config---
-        int printDelays = 500;  //How long each digit will be visible   [us]
+        const int printDelays[4] = {500, 375, 250, 125};  //How long each digit will be visible   [us]
         //------
 
         //---Signs map---
-        char signNames[16] = {
+        const char signNames[16] = {
             '0',
             '1',
             '2',
@@ -24,7 +24,7 @@ class display{
             ' '
         };
 
-        byte signCodes[16] = {
+        const byte signCodes[16] = {
             0b00111111,     //0
             0b00000110,     //1
             0b01011011,     //2
@@ -44,7 +44,7 @@ class display{
         };
         //------
 
-        uint8_t signsAmount = sizeof(signNames) / sizeof(signNames[0]);     //Map size
+        const uint8_t signsAmount = sizeof(signNames) / sizeof(signNames[0]);     //Map size
 
         //Turns one of 4 display cathodes (from 0 to 3) low
         void switchPanel(uint8_t digit){
@@ -82,6 +82,8 @@ class display{
         }
 
     public:
+        char currentDelayMode = 0;
+
         bool activeColon = false;
         //Colon leds are not multiplexed and can be switched independently
         void colonOn(){
@@ -116,7 +118,7 @@ class display{
                         delayMicroseconds(100);
                     }
                     else{
-                      delayMicroseconds(printDelays);
+                      delayMicroseconds(printDelays[currentDelayMode]);
                     }
                     
                     clearSegments();
