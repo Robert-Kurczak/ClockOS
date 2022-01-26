@@ -1,7 +1,8 @@
 class display{
     private:
         //---Config---
-        const int printDelays[4] = {500, 375, 250, 125};  //How long each digit will be visible   [us]
+        const int printDelays[4] = {500, 200, 100, 50};     //How long each digit will be visible                               [us]
+        const int halfPrintDelays[4] = {100, 50, 30, 15};   //How long each digit will be visible in dimmed half of screen      [us]
         //------
 
         //---Signs map---
@@ -115,7 +116,7 @@ class display{
                     setSegments(string[index], showDot);
 
                     if((activeHalf == 1 && index < 2) || (activeHalf == 0 && index >= 2)){
-                        delayMicroseconds(100);
+                        delayMicroseconds(halfPrintDelays[currentDelayMode]);
                     }
                     else{
                       delayMicroseconds(printDelays[currentDelayMode]);

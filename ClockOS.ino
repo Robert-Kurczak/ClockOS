@@ -3,11 +3,11 @@
 #include "RTClib.h"
 #include "alarm.h"
 
-#define timePrintTime 600000000			//How long time will be visible, before showing date	[us]
-#define yearPrintDelay 5000000			//Time after displayed dd.mm will be changed to yyyy	[us]
-#define yearPrintTime 5000000 			//How long yyyy will be displayed                    	[us]
-#define temperaturePrintTime 5000000	//How long temperature will be displayed               	[us]
-#define checkRTCdelays 100000			//Time between checks of actually time stored in RTC	[us]
+#define timePrintTime 600000			//How long time will be visible, before showing date	[ms]
+#define yearPrintDelay 5000				//Time after displayed dd.mm will be changed to yyyy	[ms]
+#define yearPrintTime 5000 				//How long yyyy will be displayed                    	[ms]
+#define temperaturePrintTime 5000		//How long temperature will be displayed               	[ms]
+#define checkRTCdelays 400				//Time between checks of actually time stored in RTC	[ms]
 
 #define modeSelectPin A0
 #define button1Pin A3
@@ -75,29 +75,28 @@ String formatNumber(uint8_t number){
 
 //Function for printing date in normal mode
 void printDateNormal(){
-	float startTime = micros();
+	unsigned long startTime = millis();
 
-	while(micros() - startTime < yearPrintDelay){
+	DateTime now = g_RTC.now();
+
+	while(millis() - startTime < yearPrintDelay){
 		if(interrupt())	return;
-
-		DateTime now = g_RTC.now();
 
 		g_mainDisplay.print(formatNumber(now.day()) + "." + formatNumber(now.month()));
 	}
 
-	startTime = micros();
+	startTime = millis();
 
-	while(micros() - startTime < yearPrintTime){
+	while(millis() - startTime < yearPrintTime){
 		if(interrupt())	return;
 
-		DateTime now = g_RTC.now();
 		g_mainDisplay.print(String(now.year()));
 	}
 }
 
 //Function for printing date in set mode
 void printDateSet(DateTime date, float timeOnDisplay, bool printYear, uint8_t activeHalf){
-	float startTime = micros();
+	unsigned long startTime = millis();
 
 	//Print ddmm
 	if(!printYear){
@@ -106,8 +105,13 @@ void printDateSet(DateTime date, float timeOnDisplay, bool printYear, uint8_t ac
 			g_mainDisplay.print(formatNumber(date.day()) + "." + formatNumber(date.month()), activeHalf);
 		}
 		else{
-			while(micros() - startTime < timeOnDisplay){
+			while(millis() - startTime < timeOnDisplay){
 				g_mainDisplay.print(formatNumber(date.day()) + "." + formatNumber(date.month()), activeHalf);
+
+				//This function have lower complexity than printTimeNormal
+				//therefore printed time by this function is brighter than printTimeNormal one.
+				//To compensate it I use delay so the time print can be consistant.
+				delayMicroseconds(750);
 			}
 		}
 	}
@@ -118,7 +122,7 @@ void printDateSet(DateTime date, float timeOnDisplay, bool printYear, uint8_t ac
 			g_mainDisplay.print(String(date.year()));
 		}
 		else{
-			while(micros() - startTime < timeOnDisplay){
+			while(millis() - startTime < timeOnDisplay){
 				g_mainDisplay.print(String(date.year()));
 			}
 		}
@@ -130,12 +134,12 @@ void printDateSet(DateTime date, float timeOnDisplay, bool printYear, uint8_t ac
 void printTimeNormal(){
 	g_mainDisplay.colonOn();
 
-	float startTime = micros();
+	unsigned long startTime = millis();
 
 	DateTime now = g_RTC.now();
-	float checkRTCtimer = micros();
+	unsigned long checkRTCtimer = millis();
 
-	while(micros() - startTime < timePrintTime){
+	while(millis() - startTime < timePrintTime){
 		if(interrupt(true)){
 			g_mainDisplay.colonOff();
 			return;
@@ -143,12 +147,11 @@ void printTimeNormal(){
 
 		//Reading from RTC is time costly and it results in lower display brightness,
 		//therefore I check this in predefined time spans
-		if(micros() - checkRTCtimer >= checkRTCdelays){
+		if(millis() - checkRTCtimer >= checkRTCdelays){
 			now = g_RTC.now();
 
-			checkRTCtimer = micros();
+			checkRTCtimer = millis();
 		}
-		
 
 		g_mainDisplay.print(formatNumber(now.hour()) + formatNumber(now.minute()));
 	}
@@ -160,15 +163,20 @@ void printTimeNormal(){
 
 //Function for printing time in set mode
 void printTimeSet(DateTime time, float timeOnDisplay, uint8_t activeHalf){
-	float startTime = micros();
+	unsigned long startTime = millis();
 
 	//Instead of printing for some period of time, print just once
 	if(timeOnDisplay == -1){
 		g_mainDisplay.print(formatNumber(time.hour()) + formatNumber(time.minute()), activeHalf);
 	}
 	else{
-		while(micros() - startTime < timeOnDisplay){
+		while(millis() - startTime < timeOnDisplay){
 			g_mainDisplay.print(formatNumber(time.hour()) + formatNumber(time.minute()), activeHalf);
+
+			//This function have lower complexity than printTimeNormal
+			//therefore printed time by this function is brighter than printTimeNormal one.
+			//To compensate it I use delay so the time print can be consistant.
+			delayMicroseconds(750);
 		}
 	}
 }
@@ -190,8 +198,9 @@ void printTemperature(){
 		result = String(temperature) + "*C";
 	}
 
-	float startTime = micros();
-	while(micros() - startTime < temperaturePrintTime){
+	unsigned long startTime = millis();
+
+	while(millis() - startTime < temperaturePrintTime){
 		if(interrupt()) return;
 		g_mainDisplay.print(result);
 	}
@@ -208,9 +217,9 @@ void printMessage(String msg, float timeOnDisplay){
 		g_mainDisplay.colonOff();
 	}
 
-	float startTime = micros();
+	unsigned long startTime = millis();
 
-	while(micros() - startTime < timeOnDisplay){
+	while(millis() - startTime < timeOnDisplay){
 		g_mainDisplay.print(msg);
 	}
 
@@ -219,18 +228,18 @@ void printMessage(String msg, float timeOnDisplay){
 	}
 }
 
-void alarmPrint(uint64_t us){
+void alarmPrint(uint64_t ms){
 	g_mainDisplay.colonOn();
 
-	float startTime = micros();
+	unsigned long startTime = millis();
 
-	while(micros() - startTime < us){
+	DateTime now = g_RTC.now();
+
+	while(millis() - startTime < ms){
 		if(interrupt(true)){
 			return;
 		}
-
-		DateTime now = g_RTC.now();
-
+		
 		g_mainDisplay.print(formatNumber(now.hour()) + formatNumber(now.minute()));
 	}
 
@@ -241,11 +250,11 @@ void alarmBuzz(){
 	while(!interrupt(true)){
 		g_alarm.beep();
 
-		alarmPrint(40000);
+		alarmPrint(40);
 
 		g_alarm.beep();
 
-		alarmPrint(160000);
+		alarmPrint(160);
 	}
 }
 
@@ -266,6 +275,10 @@ void loop(){
 	//Default clock mode
 	if(currentMode == 0){
 		switch(pressedButton()){
+			case -1:
+				printTimeNormal();
+				break;
+
 			case 1:
 				printDateNormal();
 				break;
@@ -275,12 +288,16 @@ void loop(){
 				break;
 
 			case 3:
+				g_mainDisplay.colonOn();
+
 				g_mainDisplay.currentDelayMode++;
 				g_mainDisplay.currentDelayMode %= 4;
-				break;
 
-			case -1:
-				printTimeNormal();
+				//Delay so the button wouldn't change brightness every processor tick
+				printTimeSet(g_RTC.now(), 250, 2);
+
+				g_mainDisplay.colonOff();
+				break;
 		}
 	}
 	//Set alarm mode
@@ -303,12 +320,12 @@ void loop(){
 					g_alarm.set(currentAlarm);
 					g_alarm.activate(currentAlarm);
 
-					printMessage("0n", 3000000);
+					printMessage("0n", 3000);
 				}
 				else{
 					g_alarm.deactivate();
 
-					printMessage("0ff", 3000000);
+					printMessage("0ff", 3000);
 				}
 			}
 			else{
@@ -316,7 +333,7 @@ void loop(){
 					case 1:
 						currentAlarm = currentAlarm + offset;
 	
-						printTimeSet(currentAlarm, 250000, activeHalf);
+						printTimeSet(currentAlarm, 250, activeHalf);
 						
 						if(!changes) changes = true;
 	
@@ -325,7 +342,7 @@ void loop(){
 					case 2:
 						currentAlarm = currentAlarm - offset;
 	
-						printTimeSet(currentAlarm, 250000, activeHalf);
+						printTimeSet(currentAlarm, 250, activeHalf);
 
 						if(!changes) changes = true;
 	
@@ -337,7 +354,7 @@ void loop(){
 						activeHalf++;
 						activeHalf %= 2;
 	
-						printTimeSet(currentAlarm, 250000, activeHalf);
+						printTimeSet(currentAlarm, 250, activeHalf);
 	
 						break;
 				}
@@ -397,7 +414,7 @@ void loop(){
 					}
 
 					date = DateTime(year, month, day);
-					printDateSet(date, 250000, currentSetting == 2, currentSetting);
+					printDateSet(date, 250, currentSetting == 2, currentSetting);
 
 					if(!changes) changes = true;
 
@@ -428,7 +445,7 @@ void loop(){
 					}
 
 					date = DateTime(year, month, day);
-					printDateSet(date, 250000, currentSetting == 2, currentSetting);
+					printDateSet(date, 250, currentSetting == 2, currentSetting);
 
 					if(!changes) changes = true;
 
@@ -438,7 +455,7 @@ void loop(){
 					currentSetting++;
 					currentSetting %= 3;
 
-					printDateSet(date, 250000, currentSetting == 2, currentSetting);
+					printDateSet(date, 250, currentSetting == 2, currentSetting);
 
 					break;
 			}
@@ -470,14 +487,14 @@ void loop(){
 				case 1:
 					time = time + offset;
 
-					printTimeSet(time, 250000, activeHalf);
+					printTimeSet(time, 250, activeHalf);
 
 					break;
 
 				case 2:
 					time = time - offset;
 
-					printTimeSet(time, 250000, activeHalf);
+					printTimeSet(time, 250, activeHalf);
 
 					break;
 
@@ -487,7 +504,7 @@ void loop(){
 					activeHalf++;
 					activeHalf %= 2;
 
-					printTimeSet(time, 250000, activeHalf);
+					printTimeSet(time, 250, activeHalf);
 
 					break;
 			}
