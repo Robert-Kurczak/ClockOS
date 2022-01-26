@@ -26,7 +26,7 @@ class alarm{
 
         void beep(){
             tone(buzzerPin, 2500);
-            delay(50);
+            delay(100);
             noTone(buzzerPin);
         }
 
