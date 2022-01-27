@@ -15,14 +15,14 @@ Clock supports:
 * Time setting
 * Date setting
 * Alarm setting
-* Brightness controll
+* Brightness control
 
 Settings will be keep even when the clock will be off.
 
 ## Technologies
  1. C++
  2. [Arduino Wire Library](https://www.arduino.cc/en/reference/wire)
- 3. [Adafruit RTClib](https://github.com/adafruit/RTClib)
+ 3. [Adafruit RTClib](https://github.com/adafruit/RTClib) 2.0.2
 
 ## Setup
 I used arduinoIDE with MiniCore library to burn proper bootloader, with the following settings.
