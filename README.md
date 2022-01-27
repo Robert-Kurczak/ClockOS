@@ -1,5 +1,5 @@
 # ClockOS
-Firmware that operates on my hardware quartz clock I build.
+Firmware that operates on my hardware quartz clock I built.
 
 ## Table of Contents
 * [General info](#general-info)
@@ -31,6 +31,6 @@ I used arduinoIDE with MiniCore library to burn proper bootloader, with the foll
 * EEPROM: "EEPROM retained"
 * Compiler LTO: "LTO enabled"
 
-Next using my arduino MEGA as ISP programmer, I uploaded my sketch to IC.
+Next using my arduino MEGA as ISP programmer, I uploaded my sketch to the IC.
 
 ## Hardware
