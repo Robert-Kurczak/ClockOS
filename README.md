@@ -31,7 +31,7 @@ I used arduinoIDE with MiniCore library to burn proper bootloader, with the foll
 * EEPROM: "EEPROM retained"
 * Compiler LTO: "LTO enabled"
 
-Next using my arduino MEGA as ISP programmer, I uploaded my sketch to the IC.
+Next using my arduino MEGA as ISP programmer, I uploaded my .ino sketch to the IC.
 
 ## Hardware
 ### Design
