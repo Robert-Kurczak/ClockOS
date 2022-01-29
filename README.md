@@ -17,7 +17,7 @@ Clock supports:
 * Alarm setting
 * Brightness control
 
-Settings will be keep even when the clock will be off.
+Settings will be keep even when the clock will be off. In addition to the date and time, it is able to display the ambient temperature.
 
 ## Technologies
  1. C++
