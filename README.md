@@ -44,8 +44,6 @@ Next using my arduino MEGA as ISP programmer, I uploaded my .ino sketch to the I
  <img src="/Images/IMG_2.jpg" alt="Clock picture 2" height="250">
  <img src="/Images/IMG_3.jpg" alt="Clock picture 3" height="250">
  <img src="/Images/IMG_4.jpg" alt="Clock picture 4" height="250">
- <img src="/Images/IMG_5.jpg" alt="Clock picture 5" height="250">
- <img src="/Images/IMG_6.jpg" alt="Clock picture 6" height="250">
+ <img src="/Images/IMG_5.jpeg" alt="Clock picture 5" height="250">
+ <img src="/Images/IMG_6.jpeg" alt="Clock picture 6" height="250">
 </p>
-
-#### You can see more picture from the whole process of building it [here]()
