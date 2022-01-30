@@ -9,7 +9,7 @@ Firmware that operates on my hardware quartz clock I built.
 
 ## General info
 The heart of my clock is atmega328p microcontroller that communicates with precise DS3231 RTC Module to meassure the passage of time even when the clock is off.
-Clock can work while being plugged to 5V power supply via USB micro cable, or on builtin battery. It will switch automatically between them.
+Clock can work while being plugged to 5V power supply via USB micro cable, or on built-in battery. It will switch automatically between them.
 
 Clock supports:
 * Time setting
